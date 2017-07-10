@@ -398,9 +398,9 @@ def InceptionResNetV2(include_top=True,
         x = Activation('softmax', name='Predictions')(x)
     else:
         if pooling == 'avg':
-            x = GlobalAveragePooling2D('AvgPool')(x)
+            x = GlobalAveragePooling2D(name='AvgPool')(x)
         elif pooling == 'max':
-            x = GlobalMaxPooling2D('MaxPool')(x)
+            x = GlobalMaxPooling2D(name='MaxPool')(x)
 
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.
