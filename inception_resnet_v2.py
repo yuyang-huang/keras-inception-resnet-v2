@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """Inception-Resnet V2 model for Keras.
 
+This code is modified from Keras' Inception V3 model (https://github.com/fchollet/keras/blob/master/keras/applications/inception_v3.py).
+
+Model layer naming and parameters follows TF-slim implementation (https://github.com/tensorflow/models/blob/master/slim/nets/inception_resnet_v2.py).
+
 Note that the input image format for this model is different than for
 the VGG16 and ResNet models (299x299 instead of 224x224),
 and that the input preprocessing function is also different (same as Xception).
