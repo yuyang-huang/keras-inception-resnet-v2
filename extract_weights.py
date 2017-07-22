@@ -1,29 +1,16 @@
-from __future__ import absolute_import
-from __future__ import print_function
-
 import os
 import re
+import tempfile
 from glob import glob
 import numpy as np
 import tensorflow as tf
 from keras.utils.data_utils import get_file
 
 
-# download TF-slim checkpoint for Inception-ResNet v2 and extract
-CKPT_URL = 'http://download.tensorflow.org/models/inception_resnet_v2_2016_08_30.tar.gz'
-checkpoint_tar = get_file(
-    'inception_resnet_v2_2016_08_30.tar.gz',
-    CKPT_URL,
-    file_hash='9e0f18e1259acf943e30690460d96123',
-    hash_algorithm='md5',
-    extract=True,
-    cache_subdir='models')
-checkpoint_file = glob(os.path.join(os.path.dirname(checkpoint_tar), 'inception_resnet_v2_*.ckpt'))[0]
-
-
-# for renaming the tensors to their corresponding Keras counterpart
+# regex for renaming the tensors to their corresponding Keras counterpart
 re_repeat = re.compile(r'Repeat_[0-9_]*b')
 re_block8 = re.compile(r'Block8_[A-Za-z]')
+
 
 def get_filename(key):
     """Rename tensor name to the corresponding Keras layer weight name.
@@ -62,7 +49,7 @@ def extract_tensors_from_checkpoint_file(filename, output_folder='weights'):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
-    reader = tf.train.NewCheckpointReader(file_name)
+    reader = tf.train.NewCheckpointReader(filename)
 
     for key in reader.get_variable_to_shape_map():
         # not saving the following tensors
@@ -78,4 +65,16 @@ def extract_tensors_from_checkpoint_file(filename, output_folder='weights'):
         print("tensor_name: ", key)
 
 
-extract_tensors_from_checkpoint_file(checkpoint_file)
+# download TF-slim checkpoint for Inception-ResNet v2 and extract
+CKPT_URL = 'http://download.tensorflow.org/models/inception_resnet_v2_2016_08_30.tar.gz'
+with tempfile.TemporaryDirectory() as tmpdir:
+    checkpoint_tar = get_file(
+        'inception_resnet_v2_2016_08_30.tar.gz',
+        CKPT_URL,
+        file_hash='9e0f18e1259acf943e30690460d96123',
+        hash_algorithm='md5',
+        extract=True,
+        cache_subdir='',
+        cache_dir=tmpdir)
+    checkpoint_file = glob(os.path.join(tmpdir, 'inception_resnet_v2_*.ckpt'))[0]
+    extract_tensors_from_checkpoint_file(checkpoint_file)
