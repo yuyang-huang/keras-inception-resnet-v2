@@ -29,7 +29,7 @@ def predict_slim(sample_images, print_func=print):
     sess = tf.Session()
     arg_scope = slim_irv2.inception_resnet_v2_arg_scope()
     with slim.arg_scope(arg_scope):
-      _, end_points = slim_irv2.inception_resnet_v2(scaled_input_tensor, is_training=False)
+        _, end_points = slim_irv2.inception_resnet_v2(scaled_input_tensor, is_training=False)
 
     # Load the model
     print_func("Loading TF-slim checkpoint...")

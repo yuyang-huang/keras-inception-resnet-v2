@@ -38,6 +38,7 @@ from keras import backend as K
 from keras.applications.imagenet_utils import _obtain_input_shape
 
 
+# TODO: not yet released
 WEIGHTS_PATH = 'https://github.com/myutwo150/keras-inception-resnet-v2/releases/download/v0.1/inception_resnet_v2_weights_tf_dim_ordering_tf_kernels.h5'
 WEIGHTS_PATH_NO_TOP = 'https://github.com/myutwo150/keras-inception-resnet-v2/releases/download/v0.1/inception_resnet_v2_weights_tf_dim_ordering_tf_kernels_notop.h5'
 
@@ -422,13 +423,13 @@ def InceptionResNetV2(include_top=True,
                 'inception_resnet_v2_weights_tf_dim_ordering_tf_kernels.h5',
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='ba77b2574cc5094b609f4f5d4460e5d3')
+                md5_hash='fbe2075eb507ab3a534eb60dd00e4896')
         else:
             weights_path = get_file(
                 'inception_resnet_v2_weights_tf_dim_ordering_tf_kernels_notop.h5',
                 WEIGHTS_PATH_NO_TOP,
                 cache_subdir='models',
-                md5_hash='b067741775a8920c4b5576df3345084f')
+                md5_hash='d19885ff4a710c122648d3b5c3b684e4')
         model.load_weights(weights_path)
 
     return model
