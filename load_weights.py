@@ -6,6 +6,7 @@ from inception_resnet_v2 import InceptionResNetV2
 
 
 WEIGHTS_DIR = './weights'
+MODEL_DIR = './models'
 OUTPUT_WEIGHT_FILENAME = 'inception_resnet_v2_weights_tf_dim_ordering_tf_kernels.h5'
 OUTPUT_WEIGHT_FILENAME_NOTOP = 'inception_resnet_v2_weights_tf_dim_ordering_tf_kernels_notop.h5'
 
@@ -25,9 +26,10 @@ for layer in tqdm(model.layers):
 
 
 print('Saving model weights...')
-cache_dir = os.path.expanduser(os.path.join('~', '.keras', 'models'))
-model.save_weights(os.path.join(cache_dir, OUTPUT_WEIGHT_FILENAME))
+if not os.path.exists(MODEL_DIR):
+    os.makedirs(MODEL_DIR)
+model.save_weights(os.path.join(MODEL_DIR, OUTPUT_WEIGHT_FILENAME))
 
 print('Saving model weights (no top)...')
 model_notop = Model(model.inputs, model.get_layer('Conv2d_7b_1x1_Activation').output)
-model_notop.save_weights(os.path.join(cache_dir, OUTPUT_WEIGHT_FILENAME_NOTOP))
+model_notop.save_weights(os.path.join(MODEL_DIR, OUTPUT_WEIGHT_FILENAME_NOTOP))

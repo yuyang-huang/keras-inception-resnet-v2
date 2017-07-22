@@ -67,14 +67,16 @@ def extract_tensors_from_checkpoint_file(filename, output_folder='weights'):
 
 # download TF-slim checkpoint for Inception-ResNet v2 and extract
 CKPT_URL = 'http://download.tensorflow.org/models/inception_resnet_v2_2016_08_30.tar.gz'
-with tempfile.TemporaryDirectory() as tmpdir:
-    checkpoint_tar = get_file(
-        'inception_resnet_v2_2016_08_30.tar.gz',
-        CKPT_URL,
-        file_hash='9e0f18e1259acf943e30690460d96123',
-        hash_algorithm='md5',
-        extract=True,
-        cache_subdir='',
-        cache_dir=tmpdir)
-    checkpoint_file = glob(os.path.join(tmpdir, 'inception_resnet_v2_*.ckpt'))[0]
-    extract_tensors_from_checkpoint_file(checkpoint_file)
+MODEL_DIR = './models'
+
+checkpoint_tar = get_file(
+    'inception_resnet_v2_2016_08_30.tar.gz',
+    CKPT_URL,
+    file_hash='9e0f18e1259acf943e30690460d96123',
+    hash_algorithm='md5',
+    extract=True,
+    cache_subdir='',
+    cache_dir=MODEL_DIR)
+
+checkpoint_file = glob(os.path.join(MODEL_DIR, 'inception_resnet_v2_*.ckpt'))[0]
+extract_tensors_from_checkpoint_file(checkpoint_file)

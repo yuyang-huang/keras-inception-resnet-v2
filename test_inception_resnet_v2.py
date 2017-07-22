@@ -8,8 +8,9 @@ import inception_resnet_v2 as keras_irv2
 
 
 IMAGES = ['elephant.jpg']
-SLIM_CKPT = 'ckpt/inception_resnet_v2_2016_08_30.ckpt'
-KERAS_CKPT = 'ckpt/inception_resnet_v2_weights_tf_dim_ordering_tf_kernels.h5'
+MODEL_DIR = './models'
+SLIM_CKPT = os.path.join(MODEL_DIR, 'inception_resnet_v2_2016_08_30.ckpt')
+KERAS_CKPT = os.path.join(MODEL_DIR, 'inception_resnet_v2_weights_tf_dim_ordering_tf_kernels.h5')
 ATOL = 1e-5
 VERBOSE = True
 
