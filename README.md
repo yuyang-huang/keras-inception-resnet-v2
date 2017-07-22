@@ -4,6 +4,8 @@ The Inception-ResNet v2 model using Keras.
 Layers and namings basically follows the TF-slim implementation.
 https://github.com/tensorflow/models/blob/master/slim/nets/inception_resnet_v2.py
 
+Tested with `tensorflow-gpu==1.2.1` and `Keras==2.0.6`.
+
 ## Extract layer weights from TF checkpoint
 ```
 python extract_weights.py
