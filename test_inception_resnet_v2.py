@@ -68,11 +68,11 @@ def predict_keras(sample_images, print_func=print):
     return predict_values
 
 
-verboseprint = verboseprint = print if VERBOSE else lambda *a, **k: None
-
 # test whether Keras implementation gives the same result as TF-slim implementation
+verboseprint = print if VERBOSE else lambda *a, **k: None
 slim_predictions = predict_slim(IMAGES, verboseprint)
 keras_predictions = predict_keras(IMAGES, verboseprint)
+
 for filename, y_slim, y_keras in zip(IMAGES, slim_predictions, keras_predictions):
     np.testing.assert_allclose(y_slim, y_keras, atol=ATOL, err_msg=filename)
     verboseprint('{} passed test. (tolerance={})'.format(filename, ATOL))
