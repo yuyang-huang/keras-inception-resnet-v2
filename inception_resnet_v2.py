@@ -32,7 +32,6 @@ from keras.layers import MaxPooling2D
 from keras.layers import AveragePooling2D
 from keras.layers import GlobalAveragePooling2D
 from keras.layers import GlobalMaxPooling2D
-from keras import regularizers
 from keras.engine.topology import get_source_inputs
 from keras.utils.data_utils import get_file
 from keras import backend as K
@@ -49,8 +48,7 @@ def conv2d_bn(x,
               strides=1,
               padding='same',
               activation='relu',
-              weight_decay=0.00004,
-              batch_norm_decay=0.9997,
+              use_bias=False,
               name=None):
     """Utility function to apply conv + BN.
 
@@ -68,22 +66,17 @@ def conv2d_bn(x,
     # Returns
         Output tensor after applying `Conv2D` and `BatchNormalization`.
     """
-    use_bias = not batch_norm_decay
-    regularizer = regularizers.l2(weight_decay) if weight_decay else None
-
     x = Conv2D(filters,
                kernel_size,
                strides=strides,
                padding=padding,
                use_bias=use_bias,
-               kernel_regularizer=regularizer,
-               bias_regularizer=regularizer,
                name=name)(x)
 
-    if batch_norm_decay:
+    if not use_bias:
         bn_axis = 1 if K.image_data_format() == 'channels_first' else 3
         bn_name = name + '_BatchNorm' if name else None
-        x = BatchNormalization(axis=bn_axis, momentum=batch_norm_decay, scale=False, name=bn_name)(x)
+        x = BatchNormalization(axis=bn_axis, scale=False, name=bn_name)(x)
 
     if activation:
         ac_name = name + '_Activation' if name else None
@@ -120,7 +113,7 @@ def block35(x, scale=0.17, activation='relu', name=None):
                    K.int_shape(x)[channel_axis],
                    1,
                    activation=None,
-                   batch_norm_decay=None,
+                   use_bias=True,
                    name=name + '_Conv2d_1x1')
 
     x = Lambda(lambda inputs, scale: inputs[0] + inputs[1] * scale,
@@ -159,7 +152,7 @@ def block17(x, scale=0.10, activation='relu', name=None):
                    K.int_shape(x)[channel_axis],
                    1,
                    activation=None,
-                   batch_norm_decay=None,
+                   use_bias=True,
                    name=name + '_Conv2d_1x1')
 
     x = Lambda(lambda inputs, scale: inputs[0] + inputs[1] * scale,
@@ -198,7 +191,7 @@ def block8(x, scale=0.20, activation='relu', name=None):
                    K.int_shape(x)[channel_axis],
                    1,
                    activation=None,
-                   batch_norm_decay=None,
+                   use_bias=True,
                    name=name + '_Conv2d_1x1')
 
     x = Lambda(lambda inputs, scale: inputs[0] + inputs[1] * scale,
@@ -395,10 +388,7 @@ def InceptionResNetV2(include_top=True,
         # Classification block
         x = GlobalAveragePooling2D(name='AvgPool_1a_8x8')(x)
         x = Dropout(1.0 - dropout_keep_prob, name='Dropout')(x)
-        x = Dense(classes,
-                  kernel_regularizer=regularizers.l2(0.00004),
-                  bias_regularizer=regularizers.l2(0.00004),
-                  name='Logits')(x)
+        x = Dense(classes, name='Logits')(x)
         x = Activation('softmax', name='Predictions')(x)
     else:
         if pooling == 'avg':
