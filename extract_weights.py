@@ -1,6 +1,5 @@
 import os
 import re
-import tempfile
 from glob import glob
 import numpy as np
 import tensorflow as tf
