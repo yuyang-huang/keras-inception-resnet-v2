@@ -38,7 +38,6 @@ from keras import backend as K
 from keras.applications.imagenet_utils import _obtain_input_shape
 
 
-# TODO: not yet released
 WEIGHTS_PATH = 'https://github.com/myutwo150/keras-inception-resnet-v2/releases/download/v0.1/inception_resnet_v2_weights_tf_dim_ordering_tf_kernels.h5'
 WEIGHTS_PATH_NO_TOP = 'https://github.com/myutwo150/keras-inception-resnet-v2/releases/download/v0.1/inception_resnet_v2_weights_tf_dim_ordering_tf_kernels_notop.h5'
 
