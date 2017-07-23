@@ -1,10 +1,10 @@
 # keras-inception-resnet-v2
-The Inception-ResNet v2 model using Keras.
+The Inception-ResNet v2 model using Keras (with weight files)
+
+Tested with `tensorflow-gpu==1.2.1` and `Keras==2.0.6`
 
 Layers and namings follows the TF-slim implementation:
 https://github.com/tensorflow/models/blob/master/slim/nets/inception_resnet_v2.py
-
-Tested with `tensorflow-gpu==1.2.1` and `Keras==2.0.6`.
 
 
 ## Extract layer weights from TF checkpoint
@@ -41,3 +41,4 @@ https://github.com/kentsommer/keras-inception-resnetV2
 - [X] Convert weights to HDF5 files
 - [X] Test weight loading and image prediction (`elephant.jpg`)
 - [X] Release weight files
+- [ ] Test accuracy on benchmark datasets
