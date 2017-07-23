@@ -43,6 +43,8 @@ def predict_slim(sample_images, print_func=print):
         arr = np.expand_dims(np.array(im), axis=0)
         y_pred = sess.run([end_points['Predictions']], feed_dict={input_tensor: arr})
         y_pred = y_pred[0].ravel()
+
+        y_pred = y_pred[1:] / y_pred[1:].sum()  # remove background class and renormalize
         print_func("{} class={} prob={}".format(image, np.argmax(y_pred), np.max(y_pred)))
         predict_values.append(y_pred)
 

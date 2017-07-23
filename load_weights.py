@@ -21,7 +21,15 @@ for layer in tqdm(model.layers):
         for w in layer.weights:
             weight_name = os.path.basename(w.name).replace(':0', '')
             weight_file = layer.name + '_' + weight_name + '.npy'
-            weights.append(np.load(os.path.join(WEIGHTS_DIR, weight_file)))
+            weight_arr = np.load(os.path.join(WEIGHTS_DIR, weight_file))
+
+            # remove the "background class"
+            if weight_file.startswith('Logits_bias'):
+                weight_arr = weight_arr[1:]
+            elif weight_file.startswith('Logits_kernel'):
+                weight_arr = weight_arr[:, 1:]
+
+            weights.append(weight_arr)
         layer.set_weights(weights)
 
 

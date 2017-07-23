@@ -211,7 +211,7 @@ def InceptionResNetV2(include_top=True,
                 input_tensor=None,
                 input_shape=None,
                 pooling=None,
-                classes=1001,
+                classes=1000,
                 dropout_keep_prob=0.8):
     """Instantiates the Inception-ResNet v2 architecture.
 
@@ -269,9 +269,9 @@ def InceptionResNetV2(include_top=True,
                          '`None` (random initialization) or `imagenet` '
                          '(pre-training on ImageNet).')
 
-    if weights == 'imagenet' and include_top and classes != 1001:
+    if weights == 'imagenet' and include_top and classes != 1000:
         raise ValueError('If using `weights` as imagenet with `include_top`'
-                         ' as true, `classes` should be 1001')
+                         ' as true, `classes` should be 1000')
 
     # Determine proper input shape
     input_shape = _obtain_input_shape(
@@ -422,7 +422,7 @@ def InceptionResNetV2(include_top=True,
                 'inception_resnet_v2_weights_tf_dim_ordering_tf_kernels.h5',
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='fbe2075eb507ab3a534eb60dd00e4896')
+                md5_hash='e693bd0210a403b3192acc6073ad2e96')
         else:
             weights_path = get_file(
                 'inception_resnet_v2_weights_tf_dim_ordering_tf_kernels_notop.h5',
