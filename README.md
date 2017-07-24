@@ -7,14 +7,32 @@ Layers and namings follows the TF-slim implementation:
 https://github.com/tensorflow/models/blob/master/slim/nets/inception_resnet_v2.py
 
 
-## Extract layer weights from TF checkpoint
+## Usage
+Basically the same with the `keras.applications.InceptionV3` model.
+```
+from inception_resnet_v2 import InceptionResNetV2
+
+# ImageNet classification
+model = InceptionResNetV2()
+model.predict(...)
+
+# Finetuning on another 100-class dataset
+base_model = InceptionResNetV2(include_top=False, pooling='avg')
+outputs = Dense(100, activation='softmax')(base_model.output)
+model = Model(base_model.inputs, outputs)
+model.compile(...)
+model.fit(...)
+```
+
+
+### Extract layer weights from TF checkpoint
 ```
 python extract_weights.py
 ```
 By default, the TF checkpoint file will be downloaded to `./models` folder, and the layer weights (`.npy` files) will be saved to `./weights` folder.
 
 
-## Load NumPy weight files and save to a Keras HDF5 weights file
+### Load NumPy weight files and save to a Keras HDF5 weights file
 ```
 python load_weights.py
 ```
@@ -25,7 +43,7 @@ The following weight files:
 will be generated.
 
 
-## Test model prediction on single image
+### Test model prediction on single image
 To test whether this implementation gives the same prediction as TF-slim implementation:
 ```
 PYTHONPATH=../tensorflow-models/slim python test_inception_resnet_v2.py
