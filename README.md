@@ -9,7 +9,7 @@ https://github.com/tensorflow/models/blob/master/slim/nets/inception_resnet_v2.p
 
 ## Usage
 Basically the same with the `keras.applications.InceptionV3` model.
-```
+```python
 from inception_resnet_v2 import InceptionResNetV2
 
 # ImageNet classification
