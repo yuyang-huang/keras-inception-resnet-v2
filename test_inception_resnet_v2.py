@@ -54,7 +54,7 @@ def predict_slim(sample_images, print_func=print):
 def predict_keras(sample_images, print_func=print):
     # Load the model
     print_func("Loading Keras checkpoint...")
-    model = keras_irv2.InceptionResNetV2()
+    model = keras_irv2.InceptionResNetV2(weights=None)
     model.load_weights(KERAS_CKPT)
 
     # Make prediction
