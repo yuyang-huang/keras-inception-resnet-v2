@@ -273,7 +273,8 @@ def InceptionResNetV2(include_top=True,
         default_size=299,
         min_size=139,
         data_format=K.image_data_format(),
-        include_top=include_top)
+        require_flatten=False,
+        weights=weights)
 
     if input_tensor is None:
         img_input = Input(shape=input_shape)
