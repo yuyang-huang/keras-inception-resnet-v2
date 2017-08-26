@@ -41,6 +41,25 @@ from keras import backend as K
 BASE_WEIGHT_URL = 'https://github.com/myutwo150/keras-inception-resnet-v2/releases/download/v0.1/'
 
 
+def preprocess_input(x):
+    """Preprocesses a numpy array encoding a batch of images.
+
+    This function applies the "Inception" preprocessing which converts
+    the RGB values from [0, 255] to [-1, 1]. Note that this preprocessing
+    function is different from `imagenet_utils.preprocess_input()`.
+
+    # Arguments
+        x: a 4D numpy array consists of RGB values within [0, 255].
+
+    # Returns
+        Preprocessed array.
+    """
+    x /= 255.
+    x -= 0.5
+    x *= 2.
+    return x
+
+
 def conv2d_bn(x,
               filters,
               kernel_size,
@@ -73,16 +92,16 @@ def conv2d_bn(x,
                name=name)(x)
     if not use_bias:
         bn_axis = 1 if K.image_data_format() == 'channels_first' else 3
-        bn_name = format_layer_name('BatchNorm', prefix=name)
+        bn_name = _generate_layer_name('BatchNorm', prefix=name)
         x = BatchNormalization(axis=bn_axis, scale=False, name=bn_name)(x)
     if activation is not None:
-        ac_name = format_layer_name('Activation', prefix=name)
+        ac_name = _generate_layer_name('Activation', prefix=name)
         x = Activation(activation, name=ac_name)(x)
     return x
 
 
-def format_layer_name(name, branch_idx=None, prefix=None):
-    """Utility function for formatting layer names.
+def _generate_layer_name(name, branch_idx=None, prefix=None):
+    """Utility function for generating layer names.
 
     If `prefix` is `None`, returns `None` to use default automatic layer names.
     Otherwise, the returned layer name is:
@@ -107,83 +126,68 @@ def format_layer_name(name, branch_idx=None, prefix=None):
     return '_'.join((prefix, 'Branch', str(branch_idx), name))
 
 
-def block35(x, scale=0.17, activation='relu', block_idx=None):
+def _inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
+    """Adds a Inception-ResNet block.
+
+    This function builds 3 types of Inception-ResNet blocks mentioned
+    in the paper, controlled by the `block_type` argument (which is the
+    block name used in the official TF-slim implementation):
+        - Inception-ResNet-A: `block_type='Block35'`
+        - Inception-ResNet-B: `block_type='Block17'`
+        - Inception-ResNet-C: `block_type='Block8'`
+
+    # Arguments
+        x: input tensor.
+        scale: scaling factor to scale the residuals before adding
+            them to the shortcut branch.
+        block_type: `'Block35'`, `'Block17'` or `'Block8'`, determines
+            the network structure in the residual branch.
+        block_idx: used for generating layer names.
+        activation: name of the activation function to use at the end
+            of the block (see [activations](../activations.md)).
+            When `activation=None`, no activation is applied
+            (i.e., "linear" activation: `a(x) = x`).
+
+    # Returns
+        Output tensor for the block.
+
+    # Raises
+        ValueError: if `block_type` is not one of `'Block35'`,
+            `'Block17'` or `'Block8'`.
+    """
     channel_axis = 1 if K.image_data_format() == 'channels_first' else 3
     if block_idx is None:
         prefix = None
     else:
-        prefix = '_'.join(('Block35', str(block_idx)))
-    name_fmt = partial(format_layer_name, prefix=prefix)
+        prefix = '_'.join((block_type, str(block_idx)))
+    name_fmt = partial(_generate_layer_name, prefix=prefix)
 
-    tower_conv = conv2d_bn(x, 32, 1, name=name_fmt('Conv2d_1x1', 0))
-    tower_conv1_0 = conv2d_bn(x, 32, 1, name=name_fmt('Conv2d_0a_1x1', 1))
-    tower_conv1_1 = conv2d_bn(tower_conv1_0, 32, 3, name=name_fmt('Conv2d_0b_3x3', 1))
-    tower_conv2_0 = conv2d_bn(x, 32, 1, name=name_fmt('Conv2d_0a_1x1', 2))
-    tower_conv2_1 = conv2d_bn(tower_conv2_0, 48, 3, name=name_fmt('Conv2d_0b_3x3', 2))
-    tower_conv2_2 = conv2d_bn(tower_conv2_1, 64, 3, name=name_fmt('Conv2d_0c_3x3', 2))
-    towers = [tower_conv, tower_conv1_1, tower_conv2_2]
-
-    mixed = Concatenate(axis=channel_axis, name=name_fmt('Concatenate'))(towers)
-    up = conv2d_bn(mixed,
-                   K.int_shape(x)[channel_axis],
-                   1,
-                   activation=None,
-                   use_bias=True,
-                   name=name_fmt('Conv2d_1x1'))
-    x = Lambda(lambda inputs, scale: inputs[0] + inputs[1] * scale,
-               output_shape=K.int_shape(x)[1:],
-               arguments={'scale': scale},
-               name=name_fmt('ScaleSum'))([x, up])
-    if activation is not None:
-        x = Activation(activation, name=name_fmt('Activation'))(x)
-    return x
-
-
-def block17(x, scale=0.10, activation='relu', block_idx=None):
-    channel_axis = 1 if K.image_data_format() == 'channels_first' else 3
-    if block_idx is None:
-        prefix = None
+    if block_type == 'Block35':
+        branch_0 = conv2d_bn(x, 32, 1, name=name_fmt('Conv2d_1x1', 0))
+        branch_1 = conv2d_bn(x, 32, 1, name=name_fmt('Conv2d_0a_1x1', 1))
+        branch_1 = conv2d_bn(branch_1, 32, 3, name=name_fmt('Conv2d_0b_3x3', 1))
+        branch_2 = conv2d_bn(x, 32, 1, name=name_fmt('Conv2d_0a_1x1', 2))
+        branch_2 = conv2d_bn(branch_2, 48, 3, name=name_fmt('Conv2d_0b_3x3', 2))
+        branch_2 = conv2d_bn(branch_2, 64, 3, name=name_fmt('Conv2d_0c_3x3', 2))
+        branches = [branch_0, branch_1, branch_2]
+    elif block_type == 'Block17':
+        branch_0 = conv2d_bn(x, 192, 1, name=name_fmt('Conv2d_1x1', 0))
+        branch_1 = conv2d_bn(x, 128, 1, name=name_fmt('Conv2d_0a_1x1', 1))
+        branch_1 = conv2d_bn(branch_1, 160, [1, 7], name=name_fmt('Conv2d_0b_1x7', 1))
+        branch_1 = conv2d_bn(branch_1, 192, [7, 1], name=name_fmt('Conv2d_0c_7x1', 1))
+        branches = [branch_0, branch_1]
+    elif block_type == 'Block8':
+        branch_0 = conv2d_bn(x, 192, 1, name=name_fmt('Conv2d_1x1', 0))
+        branch_1 = conv2d_bn(x, 192, 1, name=name_fmt('Conv2d_0a_1x1', 1))
+        branch_1 = conv2d_bn(branch_1, 224, [1, 3], name=name_fmt('Conv2d_0b_1x3', 1))
+        branch_1 = conv2d_bn(branch_1, 256, [3, 1], name=name_fmt('Conv2d_0c_3x1', 1))
+        branches = [branch_0, branch_1]
     else:
-        prefix = '_'.join(('Block17', str(block_idx)))
-    name_fmt = partial(format_layer_name, prefix=prefix)
+        raise ValueError('Unknown Inception-ResNet block type. '
+                         'Expects "Block35", "Block17" or "Block8", '
+                         'but got: ' + str(block_type))
 
-    tower_conv = conv2d_bn(x, 192, 1, name=name_fmt('Conv2d_1x1', 0))
-    tower_conv1_0 = conv2d_bn(x, 128, 1, name=name_fmt('Conv2d_0a_1x1', 1))
-    tower_conv1_1 = conv2d_bn(tower_conv1_0, 160, [1, 7], name=name_fmt('Conv2d_0b_1x7', 1))
-    tower_conv1_2 = conv2d_bn(tower_conv1_1, 192, [7, 1], name=name_fmt('Conv2d_0c_7x1', 1))
-    towers = [tower_conv, tower_conv1_2]
-
-    mixed = Concatenate(axis=channel_axis, name=name_fmt('Concatenate'))(towers)
-    up = conv2d_bn(mixed,
-                   K.int_shape(x)[channel_axis],
-                   1,
-                   activation=None,
-                   use_bias=True,
-                   name=name_fmt('Conv2d_1x1'))
-    x = Lambda(lambda inputs, scale: inputs[0] + inputs[1] * scale,
-               output_shape=K.int_shape(x)[1:],
-               arguments={'scale': scale},
-               name=name_fmt('ScaleSum'))([x, up])
-    if activation is not None:
-        x = Activation(activation, name=name_fmt('Activation'))(x)
-    return x
-
-
-def block8(x, scale=0.20, activation='relu', block_idx=None):
-    channel_axis = 1 if K.image_data_format() == 'channels_first' else 3
-    if block_idx is None:
-        prefix = None
-    else:
-        prefix = '_'.join(('Block8', str(block_idx)))
-    name_fmt = partial(format_layer_name, prefix=prefix)
-
-    tower_conv = conv2d_bn(x, 192, 1, name=name_fmt('Conv2d_1x1', 0))
-    tower_conv1_0 = conv2d_bn(x, 192, 1, name=name_fmt('Conv2d_0a_1x1', 1))
-    tower_conv1_1 = conv2d_bn(tower_conv1_0, 224, [1, 3], name=name_fmt('Conv2d_0b_1x3', 1))
-    tower_conv1_2 = conv2d_bn(tower_conv1_1, 256, [3, 1], name=name_fmt('Conv2d_0c_3x1', 1))
-    towers = [tower_conv, tower_conv1_2]
-
-    mixed = Concatenate(axis=channel_axis, name=name_fmt('Concatenate'))(towers)
+    mixed = Concatenate(axis=channel_axis, name=name_fmt('Concatenate'))(branches)
     up = conv2d_bn(mixed,
                    K.int_shape(x)[channel_axis],
                    1,
@@ -210,7 +214,7 @@ def InceptionResNetV2(include_top=True,
 
     Optionally loads weights pre-trained on ImageNet.
     Note that when using TensorFlow, for best performance you should
-    set `image_data_format='channels_last'` in your Keras config
+    set `"image_data_format": "channels_last"` in your Keras config
     at `~/.keras/keras.json`.
 
     The model and the weights are compatible with both TensorFlow and Theano.
@@ -231,8 +235,8 @@ def InceptionResNetV2(include_top=True,
             to use as image input for the model.
         input_shape: optional shape tuple, only to be specified
             if `include_top` is `False` (otherwise the input shape
-            has to be `(299, 299, 3)` (with `channels_last` data format)
-            or `(3, 299, 299)` (with `channels_first` data format).
+            has to be `(299, 299, 3)` (with `'channels_last'` data format)
+            or `(3, 299, 299)` (with `'channels_first'` data format).
             It should have exactly 3 inputs channels,
             and width and height should be no smaller than 139.
             E.g. `(150, 150, 3)` would be one valid value.
@@ -295,83 +299,107 @@ def InceptionResNetV2(include_top=True,
 
     # Mixed 5b (Inception-A block): 35 x 35 x 320
     channel_axis = 1 if K.image_data_format() == 'channels_first' else 3
-    name_fmt = partial(format_layer_name, prefix='Mixed_5b')
-    tower_conv = conv2d_bn(x, 96, 1, name=name_fmt('Conv2d_1x1', 0))
-    tower_conv1_0 = conv2d_bn(x, 48, 1, name=name_fmt('Conv2d_0a_1x1', 1))
-    tower_conv1_1 = conv2d_bn(tower_conv1_0, 64, 5, name=name_fmt('Conv2d_0b_5x5', 1))
-    tower_conv2_0 = conv2d_bn(x, 64, 1, name=name_fmt('Conv2d_0a_1x1', 2))
-    tower_conv2_1 = conv2d_bn(tower_conv2_0, 96, 3, name=name_fmt('Conv2d_0b_3x3', 2))
-    tower_conv2_2 = conv2d_bn(tower_conv2_1, 96, 3, name=name_fmt('Conv2d_0c_3x3', 2))
-    tower_pool = AveragePooling2D(3,
-                                  strides=1,
-                                  padding='same',
-                                  name=name_fmt('AvgPool_0a_3x3', 3))(x)
-    tower_pool_1 = conv2d_bn(tower_pool, 64, 1, name=name_fmt('Conv2d_0b_1x1', 3))
-    towers = [tower_conv, tower_conv1_1, tower_conv2_2, tower_pool_1]
-    x = Concatenate(axis=channel_axis, name='Mixed_5b')(towers)
+    name_fmt = partial(_generate_layer_name, prefix='Mixed_5b')
+    branch_0 = conv2d_bn(x, 96, 1, name=name_fmt('Conv2d_1x1', 0))
+    branch_1 = conv2d_bn(x, 48, 1, name=name_fmt('Conv2d_0a_1x1', 1))
+    branch_1 = conv2d_bn(branch_1, 64, 5, name=name_fmt('Conv2d_0b_5x5', 1))
+    branch_2 = conv2d_bn(x, 64, 1, name=name_fmt('Conv2d_0a_1x1', 2))
+    branch_2 = conv2d_bn(branch_2, 96, 3, name=name_fmt('Conv2d_0b_3x3', 2))
+    branch_2 = conv2d_bn(branch_2, 96, 3, name=name_fmt('Conv2d_0c_3x3', 2))
+    branch_pool = AveragePooling2D(3,
+                                   strides=1,
+                                   padding='same',
+                                   name=name_fmt('AvgPool_0a_3x3', 3))(x)
+    branch_pool = conv2d_bn(branch_pool, 64, 1, name=name_fmt('Conv2d_0b_1x1', 3))
+    branches = [branch_0, branch_1, branch_2, branch_pool]
+    x = Concatenate(axis=channel_axis, name='Mixed_5b')(branches)
 
-    # 10x block35 (Inception-ResNet-A block): 35 x 35 x 320
+    # 10x Block35 (Inception-ResNet-A block): 35 x 35 x 320
     for block_idx in range(1, 11):
-        x = block35(x, block_idx=block_idx)
+        x = _inception_resnet_block(x,
+                                    scale=0.17,
+                                    block_type='Block35',
+                                    block_idx=block_idx)
 
     # Mixed 6a (Reduction-A block): 17 x 17 x 1088
-    name_fmt = partial(format_layer_name, prefix='Mixed_6a')
-    tower_conv = conv2d_bn(x, 384, 3, strides=2, padding='valid', name=name_fmt('Conv2d_1a_3x3', 0))
-    tower_conv1_0 = conv2d_bn(x, 256, 1, name=name_fmt('Conv2d_0a_1x1', 1))
-    tower_conv1_1 = conv2d_bn(tower_conv1_0, 256, 3, name=name_fmt('Conv2d_0b_3x3', 1))
-    tower_conv1_2 = conv2d_bn(tower_conv1_1,
-                              384,
-                              3,
-                              strides=2,
-                              padding='valid',
-                              name=name_fmt('Conv2d_1a_3x3', 1))
-    tower_pool = MaxPooling2D(3, strides=2, padding='valid', name=name_fmt('MaxPool_1a_3x3', 2))(x)
-    towers = [tower_conv, tower_conv1_2, tower_pool]
-    x = Concatenate(axis=channel_axis, name='Mixed_6a')(towers)
+    name_fmt = partial(_generate_layer_name, prefix='Mixed_6a')
+    branch_0 = conv2d_bn(x,
+                         384,
+                         3,
+                         strides=2,
+                         padding='valid',
+                         name=name_fmt('Conv2d_1a_3x3', 0))
+    branch_1 = conv2d_bn(x, 256, 1, name=name_fmt('Conv2d_0a_1x1', 1))
+    branch_1 = conv2d_bn(branch_1, 256, 3, name=name_fmt('Conv2d_0b_3x3', 1))
+    branch_1 = conv2d_bn(branch_1,
+                         384,
+                         3,
+                         strides=2,
+                         padding='valid',
+                         name=name_fmt('Conv2d_1a_3x3', 1))
+    branch_pool = MaxPooling2D(3,
+                               strides=2,
+                               padding='valid',
+                               name=name_fmt('MaxPool_1a_3x3', 2))(x)
+    branches = [branch_0, branch_1, branch_pool]
+    x = Concatenate(axis=channel_axis, name='Mixed_6a')(branches)
 
-    # 20x block17 (Inception-ResNet-B block): 17 x 17 x 1088
+    # 20x Block17 (Inception-ResNet-B block): 17 x 17 x 1088
     for block_idx in range(1, 21):
-        x = block17(x, block_idx=block_idx)
+        x = _inception_resnet_block(x,
+                                    scale=0.1,
+                                    block_type='Block17',
+                                    block_idx=block_idx)
 
     # Mixed 7a (Reduction-B block): 8 x 8 x 2080
-    name_fmt = partial(format_layer_name, prefix='Mixed_7a')
-    tower_conv = conv2d_bn(x, 256, 1, name=name_fmt('Conv2d_0a_1x1', 0))
-    tower_conv_1 = conv2d_bn(tower_conv,
-                             384,
-                             3,
-                             strides=2,
-                             padding='valid',
-                             name=name_fmt('Conv2d_1a_3x3', 0))
-    tower_conv1 = conv2d_bn(x, 256, 1, name=name_fmt('Conv2d_0a_1x1', 1))
-    tower_conv1_1 = conv2d_bn(tower_conv1,
-                              288,
-                              3,
-                              strides=2,
-                              padding='valid',
-                              name=name_fmt('Conv2d_1a_3x3', 1))
-    tower_conv2 = conv2d_bn(x, 256, 1, name=name_fmt('Conv2d_0a_1x1', 2))
-    tower_conv2_1 = conv2d_bn(tower_conv2, 288, 3, name=name_fmt('Conv2d_0b_3x3', 2))
-    tower_conv2_2 = conv2d_bn(tower_conv2_1,
-                              320,
-                              3,
-                              strides=2,
-                              padding='valid',
-                              name=name_fmt('Conv2d_1a_3x3', 2))
-    tower_pool = MaxPooling2D(3, strides=2, padding='valid', name=name_fmt('MaxPool_1a_3x3', 3))(x)
-    towers = [tower_conv_1, tower_conv1_1, tower_conv2_2, tower_pool]
-    x = Concatenate(axis=channel_axis, name='Mixed_7a')(towers)
+    name_fmt = partial(_generate_layer_name, prefix='Mixed_7a')
+    branch_0 = conv2d_bn(x, 256, 1, name=name_fmt('Conv2d_0a_1x1', 0))
+    branch_0 = conv2d_bn(branch_0,
+                         384,
+                         3,
+                         strides=2,
+                         padding='valid',
+                         name=name_fmt('Conv2d_1a_3x3', 0))
+    branch_1 = conv2d_bn(x, 256, 1, name=name_fmt('Conv2d_0a_1x1', 1))
+    branch_1 = conv2d_bn(branch_1,
+                         288,
+                         3,
+                         strides=2,
+                         padding='valid',
+                         name=name_fmt('Conv2d_1a_3x3', 1))
+    branch_2 = conv2d_bn(x, 256, 1, name=name_fmt('Conv2d_0a_1x1', 2))
+    branch_2 = conv2d_bn(branch_2, 288, 3, name=name_fmt('Conv2d_0b_3x3', 2))
+    branch_2 = conv2d_bn(branch_2,
+                         320,
+                         3,
+                         strides=2,
+                         padding='valid',
+                         name=name_fmt('Conv2d_1a_3x3', 2))
+    branch_pool = MaxPooling2D(3,
+                               strides=2,
+                               padding='valid',
+                               name=name_fmt('MaxPool_1a_3x3', 3))(x)
+    branches = [branch_0, branch_1, branch_2, branch_pool]
+    x = Concatenate(axis=channel_axis, name='Mixed_7a')(branches)
 
-    # 10x block8 (Inception-ResNet-C block): 8 x 8 x 2080
+    # 10x Block8 (Inception-ResNet-C block): 8 x 8 x 2080
     for block_idx in range(1, 10):
-        x = block8(x, block_idx=block_idx)
-    x = block8(x, scale=1.0, activation=None, block_idx=10)
+        x = _inception_resnet_block(x,
+                                    scale=0.2,
+                                    block_type='Block8',
+                                    block_idx=block_idx)
+    x = _inception_resnet_block(x,
+                                scale=1.,
+                                activation=None,
+                                block_type='Block8',
+                                block_idx=10)
 
     # Final convolution block
     x = conv2d_bn(x, 1536, 1, name='Conv2d_7b_1x1')
 
     if include_top:
         # Classification block
-        x = GlobalAveragePooling2D(name='AvgPool_1a_8x8')(x)
+        x = GlobalAveragePooling2D(name='AvgPool')(x)
         x = Dropout(1.0 - dropout_keep_prob, name='Dropout')(x)
         x = Dense(classes, name='Logits')(x)
         x = Activation('softmax', name='Predictions')(x)
@@ -418,10 +446,3 @@ def InceptionResNetV2(include_top=True,
         model.load_weights(weights_path)
 
     return model
-
-
-def preprocess_input(x):
-    x /= 255.
-    x -= 0.5
-    x *= 2.
-    return x
