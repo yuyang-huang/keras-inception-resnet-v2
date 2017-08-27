@@ -54,9 +54,28 @@ The image file `elephant.jpg` (and basically the entire idea of converting weigh
 https://github.com/kentsommer/keras-inception-resnetV2
 
 
+### Evaluate the model on ImageNet 2012 dataset
+First, follow the
+[instructions](https://github.com/tensorflow/models/tree/master/slim#an-automated-script-for-processing-imagenet-data)
+from TF-slim to download and process the data.
+
+Suppose that the dataset is saved to the `imagenet_2012` directory, to evaluate:
+```
+PYTHONPATH=../tensorflow-models/slim python evaluate_imagenet.py ../tensorflow-models/slim/datasets/imagenet_2012 --verbose
+```
+
+The script should print out top-1 and top-5 accuracy on validation set:
+
+Implementation | Top-1 Accuracy | Top-5 Accuracy
+--- | --- | ---
+[TF-slim](https://github.com/tensorflow/models/tree/master/slim) | 80.4 | 95.3
+This repo (py27) | 80.4 | 95.2
+This repo (py36) | 80.4 | 95.2
+
+
 ## Current status
 - [X] Extract weights from TF-slim
 - [X] Convert weights to HDF5 files
 - [X] Test weight loading and image prediction (`elephant.jpg`)
 - [X] Release weight files
-- [ ] Test accuracy on benchmark datasets
+- [X] Evaluate accuracy on ImageNet benchmark dataset
