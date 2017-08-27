@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Inception-Resnet V2 model for Keras.
+"""Inception-ResNet V2 model for Keras.
 
 Model naming and structure follows TF-slim implementation (which has some additional
 layers and different number of filters from the original arXiv paper):

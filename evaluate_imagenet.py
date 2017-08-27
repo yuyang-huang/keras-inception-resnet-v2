@@ -4,12 +4,12 @@ from __future__ import print_function
 import argparse
 import math
 import tensorflow as tf; slim = tf.contrib.slim
-from keras.applications.inception_resnet_v2 import InceptionResNetV2
 from keras import backend as K
 
 # PYHTONPATH should contain the slim/ directory in the tensorflow/models repo.
 from datasets import dataset_factory
 from preprocessing import preprocessing_factory
+from inception_resnet_v2 import InceptionResNetV2
 
 
 def prepare_data(imagenet_dir, batch_size, num_threads):
