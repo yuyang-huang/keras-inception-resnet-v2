@@ -3,8 +3,18 @@ The Inception-ResNet v2 model using Keras (with weight files)
 
 Tested with `tensorflow-gpu==1.3.0` and `Keras==2.0.8` under Python 2.7 and 3.6.
 
-Layers and namings follows the TF-slim implementation:
+Layers and namings follow the TF-slim implementation:
 https://github.com/tensorflow/models/blob/master/slim/nets/inception_resnet_v2.py
+
+
+## News
+
+This implementation has been merged into the `keras.applications` module!
+
+Install the latest version Keras on GitHub and import it with:
+```python
+from keras.applications.inception_resnet_v2 import InceptionResNetV2, preprocess_input
+```
 
 
 ## Usage
