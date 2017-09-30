@@ -6,7 +6,7 @@ import math
 import tensorflow as tf; slim = tf.contrib.slim
 from keras import backend as K
 
-# PYHTONPATH should contain the slim/ directory in the tensorflow/models repo.
+# PYHTONPATH should contain the research/slim/ directory in the tensorflow/models repo.
 from datasets import dataset_factory
 from preprocessing import preprocessing_factory
 from inception_resnet_v2 import InceptionResNetV2
