@@ -1,7 +1,8 @@
 # keras-inception-resnet-v2
 The Inception-ResNet v2 model using Keras (with weight files)
 
-Tested with `tensorflow-gpu==1.8.0` and `Keras==2.2.0` under Python 2.7 and 3.6.
+Tested with `tensorflow-gpu==1.15.3` and `Keras==2.2.5` under Python 3.6
+(although there are lots of deprecation warnings since this code was written way before TF 1.15).
 
 Layers and namings follow the TF-slim implementation:
 https://github.com/tensorflow/models/blob/master/research/slim/nets/inception_resnet_v2.py
@@ -79,8 +80,7 @@ The script should print out top-1 and top-5 accuracy on validation set:
 Implementation | Top-1 Accuracy | Top-5 Accuracy
 --- | --- | ---
 [TF-slim](https://github.com/tensorflow/models/tree/master/research/slim) | 80.4 | 95.3
-This repo (py27) | 80.4 | 95.3
-This repo (py36) | 80.4 | 95.3
+This repo | 80.4 | 95.3
 
 
 ## Current status

@@ -1,7 +1,8 @@
 from __future__ import print_function
 
 import os
-import tensorflow as tf; slim = tf.contrib.slim
+import tensorflow as tf
+import tf_slim
 import numpy as np
 from PIL import Image
 from nets import inception_resnet_v2 as slim_irv2  # PYHTONPATH should contain the research/slim/ directory in the tensorflow/models repo.
@@ -29,7 +30,7 @@ def predict_slim(sample_images, print_func=print):
     # Setup session
     sess = tf.Session()
     arg_scope = slim_irv2.inception_resnet_v2_arg_scope()
-    with slim.arg_scope(arg_scope):
+    with tf_slim.arg_scope(arg_scope):
         _, end_points = slim_irv2.inception_resnet_v2(scaled_input_tensor, is_training=False)
 
     # Load the model
