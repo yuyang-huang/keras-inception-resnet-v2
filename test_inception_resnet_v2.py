@@ -4,7 +4,6 @@ import os
 import tensorflow as tf; slim = tf.contrib.slim
 import numpy as np
 from PIL import Image
-from keras.models import load_model
 from nets import inception_resnet_v2 as slim_irv2  # PYHTONPATH should contain the research/slim/ directory in the tensorflow/models repo.
 import inception_resnet_v2 as keras_irv2
 

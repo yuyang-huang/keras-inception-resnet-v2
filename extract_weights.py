@@ -31,7 +31,7 @@ def get_filename(key):
         filename = filename.replace('Block8', 'Block8_10')
     elif filename.startswith('Logits'):
         # remove duplicate "Logits" scope
-        filename = filename.replace('Logits_' , '', 1)
+        filename = filename.replace('Logits_', '', 1)
 
     # from TF to Keras naming
     filename = filename.replace('_weights', '_kernel')
