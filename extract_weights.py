@@ -70,6 +70,7 @@ def extract_tensors_from_checkpoint_file(filename, output_folder='weights'):
 CKPT_URL = 'http://download.tensorflow.org/models/inception_resnet_v2_2016_08_30.tar.gz'
 MODEL_DIR = './models'
 
+os.makedirs(MODEL_DIR, exist_ok=True)
 checkpoint_tar = get_file(
     'inception_resnet_v2_2016_08_30.tar.gz',
     CKPT_URL,
